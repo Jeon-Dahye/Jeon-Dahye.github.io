@@ -3,16 +3,110 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jeon-Dahye's Homepage</title>
+  <title>Jeon-Dahye's Crypto Dashboard</title>
 </head>
 <body>
-  <h1>Welcome to My GitHub Page</h1>
-  <!--<p>This is my first GitHub Pages website.</p>-->
 
-  <h2>Crypto Projects</h2>
-  <ul>
-    <li><a href="prices.html">Static Crypto Prices</a></li>
-    <li><a href="prices-live.html">Live Crypto Prices</a></li>
-  </ul>
+  <h1>Crypto Dashboard</h1>
+
+  <!-- ================= STATIC SECTION ================= -->
+  <h2>Static Crypto Prices</h2>
+  <table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Coin</th>
+        <th>Price (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bitcoin (BTC)</td>
+        <td>$68,189</td>
+      </tr>
+      <tr>
+        <td>Ethereum (ETH)</td>
+        <td>$1,996.1</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <br><hr><br>
+
+  <!-- ================= LIVE SECTION ================= -->
+  <h2>Live Crypto Prices (Auto Update Every 10 Seconds)</h2>
+
+  <p>
+    Status: <span id="status">Loading...</span><br>
+    Last refresh attempt: <span id="polled-at">-</span><br>
+    CoinGecko last updated: <span id="cg-updated-at">-</span>
+  </p>
+
+  <table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Coin</th>
+        <th>Price (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Bitcoin (BTC)</td>
+        <td id="btc-price">-</td>
+      </tr>
+      <tr>
+        <td>Ethereum (ETH)</td>
+        <td id="eth-price">-</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <script>
+    const API =
+      "https://api.coingecko.com/api/v3/simple/price" +
+      "?ids=bitcoin,ethereum&vs_currencies=usd&include_last_updated_at=true";
+
+    const REFRESH_MS = 10000;
+
+    function fmtMoney(x) {
+      return "$" + Number(x).toLocaleString("en-US", { maximumFractionDigits: 2 });
+    }
+
+    function fmtTime(ms) {
+      return new Date(ms).toLocaleString();
+    }
+
+    async function fetchPrices() {
+      document.getElementById("status").textContent = "Updating...";
+      document.getElementById("polled-at").textContent = fmtTime(Date.now());
+
+      try {
+        const res = await fetch(API, { cache: "no-store" });
+        if (!res.ok) throw new Error();
+
+        const data = await res.json();
+
+        document.getElementById("btc-price").textContent =
+          fmtMoney(data.bitcoin.usd);
+
+        document.getElementById("eth-price").textContent =
+          fmtMoney(data.ethereum.usd);
+
+        const cgSec = data.bitcoin.last_updated_at;
+        if (cgSec) {
+          document.getElementById("cg-updated-at").textContent =
+            fmtTime(cgSec * 1000);
+        }
+
+        document.getElementById("status").textContent = "Live";
+      } catch {
+        document.getElementById("status").textContent =
+          "Live (using last known data)";
+      }
+    }
+
+    fetchPrices();
+    setInterval(fetchPrices, REFRESH_MS);
+  </script>
+
 </body>
 </html>
